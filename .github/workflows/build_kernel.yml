@@ -1,7 +1,7 @@
 name: Build crDroid Kernel for Xiaomi Jason
 
 on:
-  workflow_dispatch:  # 手动触发
+  workflow_dispatch:
   push:
     branches: [ main ]
 
@@ -14,7 +14,7 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive  # 确保拉取子模块
+        submodules: recursive
 
     - name: Set up Build Environment
       run: |
@@ -37,20 +37,22 @@ jobs:
 
     - name: Configure Kernel (Jason defconfig)
       run: |
-        make O=out jasmine-perf_defconfig  # 使用设备专用 defconfig
+        make O=out jasmine-perf_defconfig
 
     - name: Build Kernel
       run: |
         make O=out -j$(nproc --all) 2>&1 | tee build.log
 
+    # 修正点：将 v3 改为 v4
     - name: Upload Kernel Image
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: jason-kernel-image
-        path: out/arch/arm64/boot/Image.gz-dtb  # 确认输出路径
+        path: out/arch/arm64/boot/Image.gz-dtb
 
+    # 修正点：将 v3 改为 v4
     - name: Upload Build Log (Debug)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
         name: build-log
