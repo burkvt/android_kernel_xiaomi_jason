@@ -42,7 +42,9 @@ jobs:
         # 禁用不支持的配置
         ./scripts/config --file out/.config \
           --disable CONFIG_CC_STACKPROTECTOR_STRONG \
-          --disable CONFIG_ARM64_ERRATUM_843419
+          --disable CONFIG_ARM64_ERRATUM_843419 \
+          --disable CONFIG_COMPAT \
+          --disable CONFIG_COMPAT_VDSO
         
         make ARCH=arm64 O=out olddefconfig
 
