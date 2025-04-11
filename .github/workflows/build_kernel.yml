@@ -6,7 +6,10 @@ on:
     branches: [ main ]
 
 jobs:
- build:
+  build:
+    runs-on: ubuntu-22.04  # 关键：必须存在且正确缩进
+    timeout-minutes: 120
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -25,11 +28,8 @@ jobs:
 
     - name: Set up AOSP GCC Toolchain
       run: |
-        # 64位工具链
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android-11.0.0_r48 toolchain_64
-        # 32位工具链
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b android-11.0.0_r48 toolchain_32
-        
         export PATH=$(pwd)/toolchain_64/bin:$(pwd)/toolchain_32/bin:$PATH
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-android-
@@ -41,4 +41,4 @@ jobs:
 
     - name: Build Kernel
       run: |
-        make ARCH=arm64 O=out -j$(nproc --all) 2>&1 | tee build.log
+        make ARCH=arm
