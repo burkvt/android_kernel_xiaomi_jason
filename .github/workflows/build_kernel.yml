@@ -37,11 +37,11 @@ jobs:
 
     - name: Configure Kernel (Jason defconfig)
       run: |
-        make O=out jason_defconfig
+        make ARCH=arm64 O=out jason_defconfig
 
     - name: Build Kernel
       run: |
-        make O=out -j$(nproc --all) 2>&1 | tee build.log
+        make ARCH=arm64 O=out -j$(nproc --all) 2>&1 | tee build.log
 
     # 修正点：将 v3 改为 v4
     - name: Upload Kernel Image
