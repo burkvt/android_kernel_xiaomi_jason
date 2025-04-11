@@ -7,14 +7,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04  # 关键：必须存在且正确缩进
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: recursive  # 确保拉取子模块
 
     - name: Set up Build Environment
       run: |
@@ -28,17 +28,44 @@ jobs:
 
     - name: Set up AOSP GCC Toolchain
       run: |
+        # 64位工具链
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android-11.0.0_r48 toolchain_64
+        # 32位工具链
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b android-11.0.0_r48 toolchain_32
+        
+        # 设置环境变量
         export PATH=$(pwd)/toolchain_64/bin:$(pwd)/toolchain_32/bin:$PATH
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-android-
-        export CROSS_COMPILE_ARM32=arm-linux-androideabi-
+        export CROSS_COMPILE_ARM32=arm-linux-androideabi-  # 关键：定义32位工具链前缀
 
     - name: Configure Kernel
       run: |
+        # 使用正确的 defconfig 文件名
         make ARCH=arm64 O=out jason_defconfig
+        
+        # 验证 .config 是否生成
+        if [ ! -f "out/.config" ]; then
+          echo "❌ Error: .config not generated!"
+          exit 1
+        fi
+        
+        # 更新配置（可选）
+        make ARCH=arm64 O=out olddefconfig
 
     - name: Build Kernel
       run: |
-        make ARCH=arm
+        make ARCH=arm64 O=out -j$(nproc --all) 2>&1 | tee build.log
+
+    - name: Upload Kernel Image
+      uses: actions/upload-artifact@v4
+      with:
+        name: jason-kernel-image
+        path: out/arch/arm64/boot/Image*  # 使用通配符匹配镜像文件
+
+    - name: Upload Build Log
+      uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      with:
+        name: build-log
+        path: build.log
