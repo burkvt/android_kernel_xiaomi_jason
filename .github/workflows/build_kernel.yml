@@ -6,10 +6,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
-
+ build:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -20,40 +17,28 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y \
-          bc bison build-essential ccache curl flex gcc-aarch64-linux-gnu \
+          bc bison build-essential ccache curl flex \
           git gnupg gperf lib32ncurses5-dev lib32z1-dev liblz4-tool \
           libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils \
           lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev \
-          python3 python3-pip python-is-python3 
+          python3 python3-pip python-is-python3
 
     - name: Set up AOSP GCC Toolchain
       run: |
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android-11.0.0_r48 toolchain
-        export PATH=$(pwd)/toolchain/bin:$PATH
+        # 64位工具链
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android-11.0.0_r48 toolchain_64
+        # 32位工具链
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b android-11.0.0_r48 toolchain_32
+        
+        export PATH=$(pwd)/toolchain_64/bin:$(pwd)/toolchain_32/bin:$PATH
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-android-
-        export KBUILD_BUILD_USER=github-ci
-        export KBUILD_BUILD_HOST=gh-actions
+        export CROSS_COMPILE_ARM32=arm-linux-androideabi-
 
-    - name: Configure Kernel (Jason defconfig)
+    - name: Configure Kernel
       run: |
-        make ARCH=arm64 O=out jason_defconfig
+        make ARCH=arm64 O=out jasmine-perf_defconfig
 
     - name: Build Kernel
       run: |
         make ARCH=arm64 O=out -j$(nproc --all) 2>&1 | tee build.log
-
-    # 修正点：将 v3 改为 v4
-    - name: Upload Kernel Image
-      uses: actions/upload-artifact@v4
-      with:
-        name: jason-kernel-image
-        path: out/arch/arm64/boot/Image.gz-dtb
-
-    # 修正点：将 v3 改为 v4
-    - name: Upload Build Log (Debug)
-      uses: actions/upload-artifact@v4
-      if: ${{ always() }}
-      with:
-        name: build-log
-        path: build.log
