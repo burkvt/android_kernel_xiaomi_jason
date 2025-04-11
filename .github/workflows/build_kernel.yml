@@ -37,7 +37,7 @@ jobs:
 
     - name: Configure Kernel
       run: |
-        make ARCH=arm64 O=out jasmine-perf_defconfig
+        make ARCH=arm64 O=out jason_defconfig
 
     - name: Build Kernel
       run: |
